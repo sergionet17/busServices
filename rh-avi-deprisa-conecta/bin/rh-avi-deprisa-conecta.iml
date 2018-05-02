@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_7">
+    <output url="file://$MODULE_DIR$/target/classes" />
+    <output-test url="file://$MODULE_DIR$/target/test-classes" />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src/main/fabric8" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: org.apache.camel:camel-core:unknown" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.camel:camel-spring:unknown" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.camel:camel-cxf:unknown" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.camel:camel-mail:unknown" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.camel:camel-metrics:unknown" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:unknown" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: junit:junit:unknown" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.slf4j:slf4j-log4j12:unknown" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.cxf:cxf-rt-frontend-jaxrs:unknown" level="project" />
+    <orderEntry type="library" name="Maven: io.fabric8:fabric-cxf:unknown" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.camel:camel-test-spring:unknown" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.springframework.osgi:spring-osgi-core:unknown" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.springframework.osgi:spring-osgi-test:unknown" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.springframework.osgi:spring-osgi-io:unknown" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.osgi:org.osgi.core:unknown" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:unknown" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.activemq:activemq-camel:unknown" level="project" />
+  </component>
+</module>

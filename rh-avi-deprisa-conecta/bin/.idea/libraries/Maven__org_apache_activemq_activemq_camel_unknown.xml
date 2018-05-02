@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.apache.activemq:activemq-camel:unknown">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.m2/repository/org/apache/activemq/activemq-camel/unknown/activemq-camel-unknown.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.m2/repository/org/apache/activemq/activemq-camel/unknown/activemq-camel-unknown-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.m2/repository/org/apache/activemq/activemq-camel/unknown/activemq-camel-unknown-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

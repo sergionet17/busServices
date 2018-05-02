@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: io.fabric8:fabric-cxf:unknown">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.m2/repository/io/fabric8/fabric-cxf/unknown/fabric-cxf-unknown.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.m2/repository/io/fabric8/fabric-cxf/unknown/fabric-cxf-unknown-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.m2/repository/io/fabric8/fabric-cxf/unknown/fabric-cxf-unknown-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

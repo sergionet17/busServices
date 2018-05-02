@@ -1,0 +1,5 @@
+com\avianca\deprisa\rest\dto\ResponseDTO.class
+com\avianca\deprisa\rest\processor\PrepareMailingNotificationProcessor.class
+com\avianca\deprisa\rest\dto\RequestDTO.class
+com\avianca\deprisa\rest\service\RestService.class
+com\avianca\deprisa\rest\handler\ResponseHandler.class

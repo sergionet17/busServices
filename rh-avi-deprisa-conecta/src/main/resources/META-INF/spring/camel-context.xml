@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:ctx="http://www.springframework.org/schema/context"
+    xmlns:camel="http://camel.apache.org/schema/spring"
+    xmlns:cxf="http://camel.apache.org/schema/cxf"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.0.0"
+    xsi:schemaLocation="         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd         http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd         http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd         http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd         http://www.springframework.org/schema/osgi-compendium http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+    <import resource="properties-beans.xml"/>
+    <!-- Enabled Spring Annotations -->
+    <ctx:annotation-config/>
+    <ctx:component-scan base-package="com.avianca.deprisa.*"/>  
+    <bean class="org.slf4j.LoggerFactory" factory-method="getLogger" id="loggerRef">
+        <constructor-arg index="0" value="Conecta"/>
+    </bean>
+    <!-- CONEXION BASE DE DATOS -->
+    <jee:jndi-lookup expected-type="javax.sql.DataSource"
+        id="dataSource" jndi-name="osgi:service/jdbc/conectate"/>
+    <!-- DEFINICIÓN DEL DATASOURCE -->
+    <bean class="org.apache.camel.component.sql.SqlComponent" id="sql">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!-- FIN CONEXION BASE DE DATOS -->
+    <!-- call static method -->
+    <bean
+        class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" id="test">
+        <property name="targetClass" value="org.slf4j.MDC"/>
+        <property name="targetMethod" value="put"/>
+        <property name="arguments">
+            <list>
+                <value>rh-avi-deprisa-conecta</value>
+                <value>Conecta</value>
+            </list>
+        </property>
+    </bean>
+    <cxf:rsServer address="${rest.server.url.path}" id="restServer"
+        serviceClass="com.avianca.deprisa.rest.service.RestService" staticSubresourceResolution="true">
+        <cxf:providers>
+            <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
+        </cxf:providers>
+    </cxf:rsServer>
+    <bean class="org.apache.camel.component.metrics.MetricsComponent" id="metric">
+        <description>Camel Metrics Component</description>
+    </bean>
+    <!-- Use camel-metrics route policy to gather metrics for all routes -->
+    <bean
+        class="org.apache.camel.component.metrics.routepolicy.MetricsRoutePolicyFactory" id="metricsRoutePolicyFactory">
+        <property name="useJmx" value="true"/>
+    </bean>
+    <bean
+        class="com.avianca.deprisa.rest.processor.ExecuteQueryProcessor" id="executeQueryProcessor">
+        <property name="dataQuery" ref="dataSource"></property>        
+    </bean>
+    <camelContext id="ctx-rh-avi-deprisa-conecta" messageHistory="true"
+        trace="false" typeConverterStatisticsEnabled="true"
+        useMDCLogging="true" xmlns="http://camel.apache.org/schema/spring">
+        <propertyPlaceholder id="propertiesRef" location="ref:props, ref:mail-props"/>
+        <endpoint id="rsServerEndpoint" uri="cxfrs://bean://restServer">
+            <property key="bindingStyle" value="SimpleConsumer"/>
+            <property key="loggingFeatureEnabled" value="{{rest.server.loggingFeatureEnabled}}"/>
+        </endpoint>
+        <endpoint id="sedaCorreoSoporteEndpoint" uri="seda:mailErrorNotification"/>
+        <onException id="CustomExceptionHandling">
+            <description/>
+            <exception>java.lang.Exception</exception>
+            <handled>
+                <constant>true</constant>
+            </handled>
+            <log id="logBodyRequest" loggerRef="loggerRef"
+                loggingLevel="ERROR" message="Exception: ${exception.message}, StackTrace:  ${exception.stacktrace}"/>
+            <bean ref="responseHandler">
+                <description>Create Respone Bean</description>
+            </bean>
+            <to pattern="InOnly" uri="seda:CorreoSoporte"/>
+        </onException>
+        <route id="restServerRoute" streamCache="true">
+            <from id="restFrom" uri="ref:rsServerEndpoint"/>
+            <camel:log id="_log1inicia" message="INICIA RUTA  --->  ${body}"/>
+            <setHeader headerName="origen">
+                    <simple>${body.getOrigen()}</simple>
+            </setHeader>
+            <setHeader headerName="idUsuario">
+                    <simple>${body.getIdUsuario()}</simple>
+            </setHeader>
+            <setHeader headerName="filterType">
+                    <simple>${body.getFilterType()}</simple>
+            </setHeader>
+            <setProperty id="_setProperty1exitosa" propertyName="bOperacionExitosa">
+                <camel:constant>true</camel:constant>
+            </setProperty>
+            <setProperty id="_setProperty2codigo" propertyName="codigo">
+                <camel:constant>200</camel:constant>
+            </setProperty>
+            <camel:choice>
+                <camel:when>
+                    <camel:simple>${body.getFilterType()} == 1</camel:simple>
+                    <camel:log id="_logheaderusuario" message="USUARIO  --->  ${headers.idUsuario}"/>
+                    <camel:bean ref="executeQueryProcessor" method="executeQueryProgramas"></camel:bean>
+                    <camel:log id="_logresultado" message="RESULTADO PRIMER QUERTY  --->  ${body}"/>
+                </camel:when>               
+                <camel:otherwise>
+                    <camel:log id="_log2Ejecuta" message="EJECUTAR SEGUNDO QUERTY  --->  {{sql.consulta.codigo}}"/>
+                    <camel:bean ref="executeQueryProcessor" method="executeQueryProgramas"></camel:bean>
+                    <camel:log id="_logresulSegundo" message="RESULTADO SEGUNDO QUERTY  --->  ${body}"/>                   
+                </camel:otherwise>    
+            </camel:choice>                                                             
+            <bean id="_bean1" ref="responseHandler"/>
+        </route>
+        <route customId="true" id="ROUTE-MAIL-NOTIFICATION" streamCache="true">
+            <description>Se redirecciona el mensaje al JMS de envío de Emails</description>
+            <from id="_from1" uri="ref:sedaCorreoSoporteEndpoint"/>
+            <doTry id="_doTry1">
+                <log id="_log1ref" loggerRef="loggerRef"
+                    loggingLevel="INFO" message="Notificando el Error: ${property.errorMessage}"/>
+                <setHeader headerName="DescripcionError" id="_setHeader1">
+                    <simple>${headers.errorMessage}</simple>
+                </setHeader>
+                <setHeader headerName="NombreServicio" id="NombreServicio">
+                    <simple>{{application.service.name}}</simple>
+                </setHeader>
+                <setHeader headerName="TipoServicio" id="TipoServicio">
+                    <simple>{{application.service.type}}</simple>
+                </setHeader>
+                <setProperty id="_setProperty1mailto" propertyName="mailTo">
+                    <simple>{{email.to}}</simple>
+                </setProperty>
+                <setProperty id="_setProperty2mail" propertyName="mailFrom">
+                    <simple>{{email.from}}</simple>
+                </setProperty>
+                <setProperty id="_setProperty3" propertyName="mailSubject">
+                    <simple>{{email.subject}}</simple>
+                </setProperty>
+                <setProperty id="_setProperty4" propertyName="mailTemplate">
+                    <constant>PlantillaCorreo</constant>
+                </setProperty>
+                <process id="_process1" ref="prepareMailingNotificationProcessor">
+                    <description>Create request to send to notification queue</description>
+                </process>
+                <log id="_log2ref" loggerRef="loggerRef"
+                    loggingLevel="INFO" message="Enviando mensaje a la JMS de Notificaciones: ${body}"/>
+                <inOnly id="_inOnly1" uri="activemq:queue:{{email.notification.queue.name}}"/>
+                <doCatch id="_doCatch1">
+                    <exception>java.lang.Exception</exception>
+                    <handled>
+                        <constant>true</constant>
+                    </handled>
+                    <log id="_log3" loggerRef="loggerRef"
+                        loggingLevel="ERROR" message="Error enviando mensaje al QUEUE: {{email.notification.queue.name}}, MessageError: ${exception.message}"/>
+                </doCatch>
+            </doTry>
+        </route>
+    </camelContext>
+    <!-- ActiveMQ Configuration -->
+    <bean class="org.apache.activemq.ActiveMQConnectionFactory"
+        depends-on="amq-props" id="jmsConnectionFactory">
+        <property name="brokerURL" value="${AMQ.brokerURL}"/>
+        <property name="userName" value="${AMQ.userName}"/>
+        <property name="password" value="${AMQ.password}"/>
+    </bean>
+    <bean class="org.apache.activemq.pool.PooledConnectionFactory"
+        destroy-method="stop" id="pooledConnectionFactory" init-method="start">
+        <property name="maxConnections" value="10"/>
+        <property name="maximumActiveSessionPerConnection" value="100"/>
+        <property name="blockIfSessionPoolIsFull" value="false"/>
+        <property name="blockIfSessionPoolIsFullTimeout" value="10000"/>
+        <property name="connectionFactory" ref="jmsConnectionFactory"/>
+    </bean>
+    <bean class="org.apache.camel.component.jms.JmsConfiguration" id="jmsConfiguration">
+        <property name="connectionFactory" ref="pooledConnectionFactory"/>
+    </bean>
+    <bean class="org.apache.activemq.camel.component.ActiveMQComponent" id="activemq">
+        <property name="Configuration" ref="jmsConfiguration"/>
+    </bean>
+    <!-- End ActiveMQ Configuration -->
+</beans>
