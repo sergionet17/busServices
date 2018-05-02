@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1525127667751
+Build-Jdk: 1.8.0_161
+Built-By: USER
+Bundle-Blueprint: OSGI-INF/blueprint/blueprint.xml
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.html
+Bundle-ManifestVersion: 2
+Bundle-Name: AVIANCA CONECTA T ::: DATASOURCE
+Bundle-SymbolicName: rh-avi-conecta-t-datasource.1.8-RELEASE
+Bundle-Version: 1.8.0.RELEASE
+Created-By: Apache Maven Bundle Plugin
+DynamicImport-Package: *
+Export-Service: javax.sql.DataSource;osgi.jndi.service.name=${db.jndi};d
+ atasource.name=${db.dsName};name=${db.dsName}
+Import-Package: org.jasypt.encryption.pbe.config
+Tool: Bnd-3.2.0.201605172007

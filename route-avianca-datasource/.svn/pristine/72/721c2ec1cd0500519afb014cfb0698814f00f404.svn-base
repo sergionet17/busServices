@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0" xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.0.0 http://aries.apache.org/schemas/blueprint-cm/blueprint-cm-1.0.0.xsd              http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd              http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint.xsd">
+	<cm:property-placeholder persistent-id="route.uniandes">
+		<cm:default-properties>
+			<cm:property name="datasource.connectionCacheProperties.minLimit" value="3" />
+			<cm:property name="datasource.connectionCacheProperties.maxLimit" value="5" />
+			<cm:property name="datasource.connectionCacheProperties.initialLimit" value="1" />
+			<cm:property name="datasource.connectionCacheProperties.connectionWaitTimeout" value="200" />
+		</cm:default-properties>
+	</cm:property-placeholder>
+	<bean class="oracle.jdbc.pool.OracleDataSource" id="dataSource">
+		<property name="URL" value="${datasource.url}" />
+		<property name="user" value="${datasource.user}" />
+		<property name="password" value="${datasource.password}" />
+		<property name="connectionCacheProperties">
+			<props>
+				<prop key="MinLimit">${datasource.connectionCacheProperties.minLimit}</prop>
+				<prop key="MaxLimit">${datasource.connectionCacheProperties.maxLimit}</prop>
+				<prop key="InitialLimit">${datasource.connectionCacheProperties.initialLimit}</prop>
+				<prop key="ConnectionWaitTimeout">${datasource.connectionCacheProperties.connectionWaitTimeout}</prop>
+			</props>
+		</property>
+	</bean>
+	<service interface="javax.sql.DataSource" ref="dataSource">
+		<service-properties>
+			<entry key="osgi.jndi.service.name" value="${jndi.jdbc.uni_andes}" />
+		</service-properties>
+	</service>
+</blueprint>

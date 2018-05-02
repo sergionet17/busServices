@@ -1,0 +1,93 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>co.edu.uniandes</groupId>
+	<artifactId>route-uniandes-datasource</artifactId>
+	<packaging>bundle</packaging>
+	<version>2.0.0</version>
+	<name>ROUTE-UNIANDES ::: DATASOURCE</name>
+
+	<properties>
+		<version.maven-bundle-plugin>2.3.7</version.maven-bundle-plugin>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<spring.version>3.2.8.RELEASE</spring.version>
+		<jboss.fuse.bom.version>6.3.0.redhat-187</jboss.fuse.bom.version>
+		<camel.version>2.17.0.redhat-630187</camel.version>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<cxf.version>3.1.5.redhat-630187</cxf.version>
+		<codehaus.jackson.version>1.9.13</codehaus.jackson.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.jboss.fuse.bom</groupId>
+			<artifactId>jboss-fuse-parent</artifactId>
+			<version>${jboss.fuse.bom.version}</version>
+			<type>pom</type>
+			<scope>import</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-core</artifactId>
+			<version>${camel.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-blueprint</artifactId>
+			<version>${camel.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>1.4</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-pool</groupId>
+			<artifactId>commons-pool</artifactId>
+			<version>1.6.0.redhat-9</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<defaultGoal>install</defaultGoal>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.5.1</version>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.camel</groupId>
+				<artifactId>camel-maven-plugin</artifactId>
+				<version>${camel.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<extensions>true</extensions>
+				<configuration>
+					<manifestLocation>target/META-INF</manifestLocation>
+					<instructions>
+						<Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
+						<Export-Package>
+							*
+						</Export-Package>
+						<Import-Package>
+							*
+						</Import-Package>
+						<Include-Resource>
+							src/main/resources,
+						</Include-Resource>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+
+</project>
