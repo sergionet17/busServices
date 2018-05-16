@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://camel.apache.org/schema/cxf"
+	xmlns:ctx="http://www.springframework.org/schema/context" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xmlns:camel="http://camel.apache.org/schema/spring"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+        http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd
+        http://www.springframework.org/schema/osgi-compendium http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+    <import resource="properties-beans.xml" />
+
+    <!-- Enabled Spring -->
+    <ctx:annotation-config />
+    <ctx:component-scan base-package="com.avianca.*" />
+
+    <bean class="org.slf4j.LoggerFactory" factory-method="getLogger" id="loggerRef">
+        <constructor-arg index="0" value="FolRangos" />
+    </bean>
+
+    <!-- call static method -->
+    <bean id="test" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="org.slf4j.MDC" />
+        <property name="targetMethod" value="put" />
+        <property name="arguments">
+            <list>
+                <value>rh-avi-rest-folrangos</value>
+                <value>FolRangos</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="headersInInterceptor" class="com.avianca.commons.interceptors.JAXRSHeadersInInterceptor">
+	<property name="requiredHeaders">
+	    <list>
+		<value>Scanal</value>
+		<value>SOrigenCliente</value>
+		<value>SUsuario</value>
+            </list>
+	</property>
+    </bean>
+
+    <!-- CONEXION BASE DE DATOS -->
+    <jee:jndi-lookup expected-type="javax.sql.DataSource"
+                     id="dataSource" jndi-name="osgi:service/jdbc/fol"/>
+    <!-- DEFINICIÓN DEL DATASOURCE -->
+    <bean class="org.apache.camel.component.sql.SqlComponent" id="sql">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- JAXRS providers -->
+    <bean id="jsonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" />
+
+    <cxf:rsServer id="rsServer" address="${lifemiles.folrangos.rest.path}" serviceClass="com.avianca.lifemiles.service.FolRangosService" staticSubresourceResolution="true">
+        <cxf:providers>
+            <ref bean="jsonProvider" />
+        </cxf:providers>
+        <cxf:properties>
+            <entry key="receiveTimeout" value="1000000000" />
+            <entry key="connectionTimeout" value="1000000000" />
+        </cxf:properties>
+        <cxf:inInterceptors>
+            <ref bean="headersInInterceptor"/>
+        </cxf:inInterceptors>
+        <cxf:outInterceptors>
+            <ref bean="elapsedTimeOut" />
+        </cxf:outInterceptors>
+    </cxf:rsServer>
+
+    <bean id="responseHandler" class="com.avianca.lifemiles.handlers.ResponseHandler" />
+
+    <bean id="defaultErrorHandlerBuilder" class="org.apache.camel.builder.DefaultErrorHandlerBuilder">
+        <property name="redeliveryPolicy">
+            <bean class="org.apache.camel.processor.RedeliveryPolicy">
+                <property name="maximumRedeliveries" value="3" />
+            </bean>
+        </property>
+        <property name="useOriginalMessage" value="true" />
+        <property name="onRedelivery" ref="redeliveryProcessor" />
+    </bean>
+
+    <bean class="com.avianca.lifemiles.interceptors.InterceptorLogicImpl" id="exec" />
+    <bean class="com.avianca.lifemiles.interceptors.ElapsedTimeOutRSInterceptor" id="elapsedTimeOut">
+        <property name="executionClass" ref="exec" />
+    </bean>
+
+    <bean id="metric" class="org.apache.camel.component.metrics.MetricsComponent" />
+    <!-- use camel-metrics route policy to gather metrics for all routes -->
+    <bean id="metricsRoutePolicyFactory" class="org.apache.camel.component.metrics.routepolicy.MetricsRoutePolicyFactory">
+        <property name="useJmx" value="true" />
+    </bean>
+
+    <camelContext id="ctx.rh-avi-rest-folrangos" messageHistory="true" trace="false" useMDCLogging="true" xmlns="http://camel.apache.org/schema/spring">
+        <propertyPlaceholder location="ref:props, ref:mail-props" id="propertiesPlaceHolder" />
+
+        <onException>
+            <exception>java.lang.Exception</exception>
+            <redeliveryPolicy maximumRedeliveries="3" />
+            <handled>
+                <constant>true</constant>
+            </handled>
+            <log message="Exception Message: ${exception.message}" loggingLevel="ERROR" loggerRef="loggerRef" />
+            <log message="Exception Stack: ${exception.stacktrace}" loggingLevel="ERROR" loggerRef="loggerRef" />
+            <setProperty propertyName="bOperacionExitosa">
+                <simple>false</simple>
+            </setProperty>
+            <setProperty propertyName="sCodigoRespuesta">
+                <simple>{{msg.failure.response.code}}</simple>
+            </setProperty>
+            <setProperty propertyName="sMensajeRtaUsuario">
+                <simple>{{msg.failure.transaction}} ${exception.message}</simple>
+            </setProperty>
+            <setProperty propertyName="sMensajeRtaTecnico">
+                <simple>${exception.stacktrace}</simple>
+            </setProperty>
+            <process ref="responseHandler" />
+        </onException>
+
+        <onException>
+            <exception>java.sql.SQLException</exception>
+            <redeliveryPolicy maximumRedeliveries="3" redeliveryDelay="3000" retryAttemptedLogLevel="TRACE" retriesExhaustedLogLevel="TRACE" />
+            <handled>
+                <constant>true</constant>
+            </handled>
+            <log message="Headers: ${headers}" loggingLevel="ERROR" loggerRef="loggerRef" />
+            <log message="Exception Message: ${exception.message}" loggingLevel="ERROR" loggerRef="loggerRef" />
+            <log message="Exception Stack: ${exception.stacktrace}" loggingLevel="ERROR" loggerRef="loggerRef" />
+            <setHeader headerName="errorMessage">
+                <simple>${exception.message}</simple>
+            </setHeader>
+            <setProperty propertyName="bOperacionExitosa">
+                <simple>false</simple>
+            </setProperty>
+            <setProperty propertyName="sCodigoRespuesta">
+                <simple>{{msg.failure.response.code}}</simple>
+            </setProperty>
+            <setProperty propertyName="sMensajeRtaUsuario">
+                <simple>{{msg.failure.transaction}} ${exception.message}</simple>
+            </setProperty>
+            <setProperty propertyName="sMensajeRtaTecnico">
+                <simple>${exception.stacktrace}</simple>
+            </setProperty>
+            <process ref="responseHandler" />
+            <to uri="seda:CorreoSoporte" pattern="InOnly" />
+        </onException>
+
+        <onException>
+            <exception>java.net.ConnectException</exception>
+            <redeliveryPolicy maximumRedeliveries="3" redeliveryDelay="3000" retryAttemptedLogLevel="TRACE" retriesExhaustedLogLevel="TRACE" />
+            <handled>
+                <constant>true</constant>
+            </handled>
+            <log message="Exception Message: ${exception.message}" loggingLevel="ERROR" loggerRef="loggerRef" />
+            <setHeader headerName="errorMessage">
+                <simple>${exception.message}</simple>
+            </setHeader>
+            <setProperty propertyName="bOperacionExitosa">
+                <simple>false</simple>
+            </setProperty>
+            <setProperty propertyName="sCodigoRespuesta">
+                <simple>{{msg.failure.response.code}}</simple>
+            </setProperty>
+            <setProperty propertyName="sMensajeRtaUsuario">
+                <simple>{{msg.failure.transaction}} ${exception.message}</simple>
+            </setProperty>
+            <setProperty propertyName="sMensajeRtaTecnico">
+                <simple>${exception.stacktrace}</simple>
+            </setProperty>
+            <process ref="responseHandler" />
+            <to uri="seda:CorreoSoporte" pattern="InOnly" />
+        </onException>
+
+        <onCompletion onCompleteOnly="true">
+            <to uri="metrics:counter:success" />
+        </onCompletion>
+
+        <route id="ROUTE-REST-FOLRANGOS" streamCache="true" errorHandlerRef="defaultErrorHandlerBuilder">
+            <from uri="cxfrs:bean:rsServer?bindingStyle=SimpleConsumer&amp;loggingFeatureEnabled={{loggingFeatureEnabled}}" id="fromRestGetFolRangos">
+                <description>
+                    Service Rest Get Folrangos
+                </description>
+            </from>
+            <log message="Starting Rest Get Rangos" loggingLevel="INFO" loggerRef="loggerRef" />
+            <camel:log message="ANTES DE EJECUTAR LA CONSULTA  --->  ${body}" />
+			<camel:to uri="sql://{{sql.query.obtener.datos.vuelo}}" />
+            <camel:log message="DESPUES DE EJECUTAR LA CONSULTA  --->  ${body}" />
+            <!-- Pendiente Consulta A Base de Datos de FolRangos -->
+
+            <setProperty propertyName="bOperacionExitosa">
+                <simple>true</simple>
+            </setProperty>
+            <setProperty propertyName="sCodigoRespuesta">
+                <simple>{{msg.succesful.response.code}}</simple>
+            </setProperty>
+            <setProperty propertyName="sMensajeRtaUsuario">
+                <simple>{{msg.succesful.transaction}}</simple>
+            </setProperty>
+            <process ref="responseHandler" />
+            <log message="Response Before End Route: ${body}" loggingLevel="DEBUG" loggerRef="loggerRef" />
+        </route>
+
+        <route customId="true" id="ROUTE-MAIL-NOTIFICATION" streamCache="true">
+            <description>Se redirecciona el mensaje al JMS de envío de Emails</description>
+            <from uri="seda:CorreoSoporte" />
+            <log message="Notificando el Error: ${property.errorMessage}" loggingLevel="DEBUG" loggerRef="loggerRef" />
+            <setHeader headerName="DescripcionError">
+                <simple>${headers.errorMessage}</simple>
+            </setHeader>
+            <setHeader headerName="NombreServicio" id="NombreServicio">
+                <constant>Servicio Rest Get FolRangos</constant>
+            </setHeader>
+            <setHeader headerName="TipoServicio" id="TipoServicio">
+                <constant>Consulta A database </constant>
+            </setHeader>
+            <setProperty propertyName="mailTo">
+                <simple>{{email.to}}</simple>
+            </setProperty>
+            <setProperty propertyName="mailFrom">
+                <simple>{{email.from}}</simple>
+            </setProperty>
+            <setProperty propertyName="mailSubject">
+                <simple>{{email.subject}}</simple>
+            </setProperty>
+            <setProperty propertyName="mailTemplate">
+                <constant>PlantillaCorreo</constant>
+            </setProperty>
+            <process ref="prepareMailingNotificationProcessor">
+                <description>Create request to send to notification queue</description>
+            </process>
+            <log message="Enviando mensaje a la JMS de Notificaciones: ${body}" loggingLevel="WARN" loggerRef="loggerRef" />
+            <inOnly uri="activemq:queue:{{email.notification.queue.name}}" />
+        </route>
+    </camelContext>
+
+    <bean class="org.apache.activemq.ActiveMQConnectionFactory" id="jmsConnectionFactory">
+        <property name="brokerURL" value="${AMQ.brokerURL}" />
+        <property name="userName" value="${AMQ.userName}" />
+        <property name="password" value="${AMQ.password}" />
+    </bean>
+    <bean class="org.apache.activemq.camel.component.ActiveMQComponent" id="activemq">
+        <property name="Configuration" ref="jmsConfiguration" />
+    </bean>
+    <bean class="org.apache.camel.component.jms.JmsConfiguration" id="jmsConfiguration">
+        <property name="connectionFactory" ref="pooledConnectionFactory" />
+    </bean>
+    <bean class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop" id="pooledConnectionFactory" init-method="start">
+        <property name="maxConnections" value="10" />
+        <property name="maximumActiveSessionPerConnection" value="100" />
+        <property name="blockIfSessionPoolIsFull" value="false" />
+        <property name="blockIfSessionPoolIsFullTimeout" value="10000" />
+        <property name="connectionFactory" ref="jmsConnectionFactory" />
+    </bean>
+</beans>

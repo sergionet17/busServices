@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1525990087778
+Build-Jdk: 1.8.0_161
+Built-By: USER
+Bundle-Description: Proyecto Camel Generado a partir de un Archetype par
+ a JBoss Fuse Avianca
+Bundle-ManifestVersion: 2
+Bundle-Name: LifeMiles ::: Get Fol Rangos
+Bundle-SymbolicName: com.avianca.lifemiles.rh-avi-rest-folrangos
+Bundle-Version: 1.0.0.RELEASE
+Created-By: Apache Maven Bundle Plugin
+Import-Package: com.avianca.commons.interceptors;version="[1.0,2)",com.f
+ asterxml.jackson.annotation;version="[2.4,3)",com.fasterxml.jackson.dat
+ abind.annotation;version="[2.4,3)",com.fasterxml.jackson.jaxrs.json;ver
+ sion="[2.4,3)",javax.sql,javax.ws.rs;version="[2.0,3)",javax.ws.rs.core
+ ;version="[2.0,3)",javax.xml.bind.annotation,org.apache.activemq,org.ap
+ ache.activemq.camel.component;version="[5.11,6)",org.apache.activemq.po
+ ol,org.apache.camel;version="[2.15,3)",org.apache.camel.builder;version
+ ="[2.15,3)",org.apache.camel.component.cxf.common.message;version="[2.1
+ 5,3)",org.apache.camel.component.jms;version="[2.15,3)",org.apache.came
+ l.component.metrics;version="[2.15,3)",org.apache.camel.component.metri
+ cs.routepolicy;version="[2.15,3)",org.apache.camel.component.sql,org.ap
+ ache.camel.processor;version="[2.15,3)",org.apache.cxf.interceptor;vers
+ ion="[3.0,4)",org.apache.cxf.message;version="[3.0,4)",org.apache.cxf.p
+ hase;version="[3.0,4)",org.slf4j;version="[1.7,2)",org.springframework.
+ beans.factory.config,org.springframework.stereotype
+Tool: Bnd-1.50.0
